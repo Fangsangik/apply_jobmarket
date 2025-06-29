@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if error %}
+        <div class="alert alert-warning" role="alert">
+            {{ error }}
+        </div>
+        <div class="text-center">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">메인으로 돌아가기</a>
+        </div>
+    {% else %}
+        <!-- 검색 결과 헤더 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-center">🎯 검색 결과</h2>
+                <p class="text-center text-muted">
+                    총 {{ "{:,}".format(total_jobs) }}개의 채용공고 중 {{ start_idx }}~{{ end_idx }}번째 표시
+                </p>
+            </div>
+        </div>
+
+        <!-- 시각화 차트 (첫 페이지에서만) -->
+        {% if charts and page == 1 %}
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="mb-3">📊 채용 시장 분석</h3>
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body p-2">
+                                <div id="monthly-trend-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body p-2">
+                                <div id="job-distribution-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body p-2">
+                                <div id="experience-distribution-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body p-2">
+                                <div id="remote-work-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body p-2">
+                                <div id="salary-experience-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 채용시장 인사이트 리포트 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="analysis-section">
+                    <div class="d-flex align-items-center mb-3">
+                        <h3 class="mb-0 me-3">📊 채용시장 인사이트 리포트</h3>
+                        <button class="insight-toggle-btn btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#insightReports" aria-expanded="false">
+                            <i class="fas fa-chart-line me-1"></i>리포트 보기
+                        </button>
+                    </div>
+                    
+                    <div class="collapse" id="insightReports">
+                        <div class="row">
+                            <!-- 연봉 분석 토글 -->
+                            <div class="col-lg-6 mb-3">
+                                <div class="card insight-card">
+                                    <div class="card-header">
+                                        <button class="btn btn-link text-decoration-none w-100 text-start p-0" type="button" data-bs-toggle="collapse" data-bs-target="#salaryAnalysis">
+                                            <i class="fas fa-won-sign text-success me-2"></i><strong>💰 연봉 분석 보고서</strong>
+                                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                                        </button>
+                                    </div>
+                                    <div id="salaryAnalysis" class="collapse">
+                                        <div class="card-body">
+                                            <h6><i class="fas fa-search text-primary"></i> 주요 발견사항</h6>
+                                            <ul class="small mb-3">
+                                                <li>백엔드 개발자 평균 연봉: <strong>6,200만원</strong></li>
+                                                <li>프론트엔드 대비 <span class="text-success">15% 높음</span></li>
+                                                <li>경력 3년차부터 급격한 상승세</li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-chart-bar text-info"></i> 경력별 연봉 현황</h6>
+                                            <ul class="small mb-3">
+                                                <li>신입: 3,500만원</li>
+                                                <li>3-5년: 5,500만원 <span class="text-success">(+57%)</span></li>
+                                                <li>5년+: 7,200만원 <span class="text-success">(+31%)</span></li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-lightbulb text-warning"></i> 핵심 인사이트</h6>
+                                            <ul class="small">
+                                                <li>AI/ML 개발자가 가장 높은 연봉</li>
+                                                <li>외국계 기업이 국내기업보다 평균 30% 높음</li>
+                                                <li>판교지역이 서울보다 5% 높음</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 기술 트렌드 토글 -->
+                            <div class="col-lg-6 mb-3">
+                                <div class="card insight-card">
+                                    <div class="card-header">
+                                        <button class="btn btn-link text-decoration-none w-100 text-start p-0" type="button" data-bs-toggle="collapse" data-bs-target="#techTrends">
+                                            <i class="fas fa-code text-danger me-2"></i><strong>🔥 핫한 기술 스택</strong>
+                                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                                        </button>
+                                    </div>
+                                    <div id="techTrends" class="collapse">
+                                        <div class="card-body">
+                                            <h6><i class="fas fa-rocket text-primary"></i> 급상승 기술</h6>
+                                            <ul class="small mb-3">
+                                                <li>1. Python (채용공고 42%) <span class="text-success">⬆️23%</span></li>
+                                                <li>2. React (38%) <span class="text-success">⬆️18%</span></li>
+                                                <li>3. AWS (35%) <span class="text-success">⬆️31%</span></li>
+                                                <li>4. Docker (28%) <span class="text-success">⬆️45%</span></li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-bolt text-warning"></i> 신기술 트렌드</h6>
+                                            <ul class="small mb-3">
+                                                <li>ChatGPT API 연동 프로젝트 급증</li>
+                                                <li>Kubernetes 필수 스킬로 부상</li>
+                                                <li>TypeScript가 JavaScript 추월</li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-target text-info"></i> 추천 학습 로드맵</h6>
+                                            <ul class="small">
+                                                <li><strong>백엔드:</strong> Python → FastAPI → AWS</li>
+                                                <li><strong>프론트:</strong> React → TypeScript → Next.js</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 회사 규모별 분석 토글 -->
+                            <div class="col-lg-6 mb-3">
+                                <div class="card insight-card">
+                                    <div class="card-header">
+                                        <button class="btn btn-link text-decoration-none w-100 text-start p-0" type="button" data-bs-toggle="collapse" data-bs-target="#companyAnalysis">
+                                            <i class="fas fa-building text-info me-2"></i><strong>🏢 회사 규모별 특징</strong>
+                                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                                        </button>
+                                    </div>
+                                    <div id="companyAnalysis" class="collapse">
+                                        <div class="card-body">
+                                            <h6><i class="fas fa-industry text-primary"></i> 대기업 (네이버, 카카오, 쿠팡)</h6>
+                                            <ul class="small mb-3">
+                                                <li>평균 연봉: <strong>8,500만원</strong></li>
+                                                <li>복리후생: ⭐⭐⭐⭐⭐</li>
+                                                <li>채용 난이도: 매우 높음</li>
+                                                <li>성장성: 안정적</li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-rocket text-warning"></i> 스타트업</h6>
+                                            <ul class="small mb-3">
+                                                <li>평균 연봉: <strong>6,200만원</strong></li>
+                                                <li>스톡옵션: 높은 확률</li>
+                                                <li>채용 난이도: 중간</li>
+                                                <li>성장성: 높음 (리스크 존재)</li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-globe text-success"></i> 외국계</h6>
+                                            <ul class="small">
+                                                <li>평균 연봉: <strong>9,800만원</strong></li>
+                                                <li>영어 필수</li>
+                                                <li>워라밸: 좋음</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 지역별 분석 토글 -->
+                            <div class="col-lg-6 mb-3">
+                                <div class="card insight-card">
+                                    <div class="card-header">
+                                        <button class="btn btn-link text-decoration-none w-100 text-start p-0" type="button" data-bs-toggle="collapse" data-bs-target="#locationAnalysis">
+                                            <i class="fas fa-map-marker-alt text-success me-2"></i><strong>📍 지역별 채용 현황</strong>
+                                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                                        </button>
+                                    </div>
+                                    <div id="locationAnalysis" class="collapse">
+                                        <div class="card-body">
+                                            <h6><i class="fas fa-map text-primary"></i> 채용공고 분포</h6>
+                                            <ul class="small mb-3">
+                                                <li>서울: <strong>45%</strong> (압도적 1위)</li>
+                                                <li>경기(판교): <strong>28%</strong></li>
+                                                <li>부산: <strong>8%</strong></li>
+                                                <li>기타: <strong>19%</strong></li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-won-sign text-warning"></i> 지역별 연봉 격차</h6>
+                                            <ul class="small mb-3">
+                                                <li>판교: <strong>7,200만원</strong> (최고)</li>
+                                                <li>서울 강남: <strong>6,800만원</strong></li>
+                                                <li>서울 기타: <strong>6,200만원</strong></li>
+                                                <li>부산: <strong>4,800만원</strong></li>
+                                            </ul>
+                                            
+                                            <h6><i class="fas fa-subway text-info"></i> 출퇴근 & 생활비</h6>
+                                            <ul class="small">
+                                                <li>판교: 높은 연봉, 높은 생활비</li>
+                                                <li>부산: 낮은 연봉, 낮은 생활비</li>
+                                                <li><strong>코스트 퍼포먼스:</strong> 부산이 유리</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 이직 타이밍 토글 -->
+                            <div class="col-12 mb-3">
+                                <div class="card insight-card">
+                                    <div class="card-header">
+                                        <button class="btn btn-link text-decoration-none w-100 text-start p-0" type="button" data-bs-toggle="collapse" data-bs-target="#timingAnalysis">
+                                            <i class="fas fa-clock text-warning me-2"></i><strong>⏰ 언제 이직하는게 좋을까?</strong>
+                                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                                        </button>
+                                    </div>
+                                    <div id="timingAnalysis" class="collapse">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6><i class="fas fa-calendar text-primary"></i> 월별 채용 트렌드</h6>
+                                                    <ul class="small mb-3">
+                                                        <li>3-4월: 🔥🔥🔥 (신입 채용 시즌)</li>
+                                                        <li>9-10월: 🔥🔥🔥 (하반기 채용)</li>
+                                                        <li>1-2월: 🔥 (연말 이직자 충원)</li>
+                                                        <li>7-8월: 🔥 (휴가철, 채용 적음)</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6><i class="fas fa-lightbulb text-warning"></i> 이직 타이밍 꿀팁</h6>
+                                                    <ul class="small mb-3">
+                                                        <li>연봉협상 최적기: 12월-1월</li>
+                                                        <li>경력직 기회 많은 시기: 3-4월</li>
+                                                        <li>경쟁 적은 시기: 8월, 12월</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6><i class="fas fa-target text-success"></i> 직무별 베스트 타이밍</h6>
+                                                    <ul class="small">
+                                                        <li><strong>개발자:</strong> 연중 고르게 (수요 많음)</li>
+                                                        <li><strong>기획/마케팅:</strong> 3-4월, 9-10월</li>
+                                                        <li><strong>디자이너:</strong> 프로젝트 시작 전</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 채용공고 목록 -->
+        <div class="row mb-4">
+            {% for job in jobs %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 job-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary job-id">#{{ job.id }}</span>
+                            {% if job.job_role %}
+                                <span class="badge bg-secondary">{{ job.job_role }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <h5 class="card-title job-title">{{ job.title }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted company-name">{{ job.company }}</h6>
+                        
+                        <div class="job-details">
+                            {% if job.experience %}
+                            <p class="mb-1">
+                                <i class="fas fa-user-clock text-primary"></i>
+                                <small>경력: {{ job.experience }}</small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if job.location %}
+                            <p class="mb-1">
+                                <i class="fas fa-map-marker-alt text-primary"></i>
+                                <small>위치: {{ job.location }}</small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if job.salary %}
+                            <p class="mb-1">
+                                <i class="fas fa-won-sign text-primary"></i>
+                                <small>연봉: {{ job.salary }}</small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if job.employment_type %}
+                            <p class="mb-1">
+                                <i class="fas fa-briefcase text-primary"></i>
+                                <small>고용형태: {{ job.employment_type }}</small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if job.education %}
+                            <p class="mb-1">
+                                <i class="fas fa-graduation-cap text-primary"></i>
+                                <small>학력: {{ job.education }}</small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if job.deadline %}
+                            <p class="mb-1">
+                                <i class="fas fa-calendar-alt text-danger"></i>
+                                <small>마감: {{ job.deadline }}</small>
+                            </p>
+                            {% endif %}
+                            
+                            <!-- 기술 스택 -->
+                            {% if job.tech_stacks %}
+                            <div class="mt-2">
+                                <small class="text-muted d-block mb-1">기술 스택:</small>
+                                {% for tech in job.tech_stacks %}
+                                    <span class="badge bg-primary text-white me-1 mb-1 tech-badge">{{ tech }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- 복리후생 -->
+                            {% if job.benefits %}
+                            <div class="mt-2">
+                                <small class="text-muted d-block mb-1">복리후생:</small>
+                                {% for benefit in job.benefits %}
+                                    <span class="badge bg-success text-white me-1 mb-1">{{ benefit }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        {% if job.link and job.link != '#' %}
+                            <a href="{{ job.link }}" target="_blank" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-external-link-alt"></i> 지원하기
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                                링크 없음
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 페이지네이션 -->
+        {% if total_pages > 1 %}
+        <nav aria-label="채용공고 페이지네이션">
+            <ul class="pagination justify-content-center">
+                <!-- 이전 페이지 -->
+                {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('show_jobs', page=page-1) }}">
+                            <i class="fas fa-chevron-left"></i> 이전
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-left"></i> 이전</span>
+                    </li>
+                {% endif %}
+
+                <!-- 페이지 번호들 -->
+                {% set start_page = [1, page - 2]|max %}
+                {% set end_page = [total_pages, page + 2]|min %}
+                
+                {% if start_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('show_jobs', page=1) }}">1</a>
+                    </li>
+                    {% if start_page > 2 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endif %}
+
+                {% for page_num in range(start_page, end_page + 1) %}
+                    {% if page_num == page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('show_jobs', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if end_page < total_pages %}
+                    {% if end_page < total_pages - 1 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('show_jobs', page=total_pages) }}">{{ total_pages }}</a>
+                    </li>
+                {% endif %}
+
+                <!-- 다음 페이지 -->
+                {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('show_jobs', page=page+1) }}">
+                            다음 <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">다음 <i class="fas fa-chevron-right"></i></span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- 새 검색 버튼 -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i> 새로운 검색
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% if charts and page == 1 %}
+<script>
+    // 차트 데이터
+    const charts = {{ charts|tojson }};
+
+    // 월별 트렌드 차트
+    if (charts.monthly_trend) {
+        Plotly.newPlot('monthly-trend-chart', charts.monthly_trend.data, charts.monthly_trend.layout, {
+            responsive: true,
+            displayModeBar: false
+        });
+    }
+
+    // 직무별 분포 차트
+    if (charts.job_distribution) {
+        Plotly.newPlot('job-distribution-chart', charts.job_distribution.data, charts.job_distribution.layout, {
+            responsive: true,
+            displayModeBar: false
+        });
+    }
+
+    // 경력별 분포 차트
+    if (charts.experience_distribution) {
+        Plotly.newPlot('experience-distribution-chart', charts.experience_distribution.data, charts.experience_distribution.layout, {
+            responsive: true,
+            displayModeBar: false
+        });
+    }
+
+    // 원격근무 차트
+    if (charts.remote_work) {
+        Plotly.newPlot('remote-work-chart', charts.remote_work.data, charts.remote_work.layout, {
+            responsive: true,
+            displayModeBar: false
+        });
+    }
+
+    // 경력별 연봉 차트
+    if (charts.salary_by_experience) {
+        Plotly.newPlot('salary-experience-chart', charts.salary_by_experience.data, charts.salary_by_experience.layout, {
+            responsive: true,
+            displayModeBar: false
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}
